@@ -330,6 +330,75 @@ class PathfinderService:
             parsers[p.format] = p
         return parsers
 
+    async def build_graph(self, report: 'VulnerabilityReport'):  # -> nx.MultiDiGraph:
+        """
+        
+        """
+        multi_dict = dict()
+        for node in report.network_map_nodes:
+            host = report.hosts[node]
+            for edge in [e for e in report.network_map_edges if e[0] == node]:
+                edge_data = dict()
+                for ability in host.possible_abilities:
+                    steps = await self._get_adversary_steps(ability.uuid)
+                    edge_data[ability.uuid] = {
+                        'weight': ability.success_prob,
+                        'steps': len(steps)
+                    }
+                multi_dict[node][edge[1]] = edge_data
+        print(f'MULTI DICT: {multi_dict}')
+        return nx.MultiDiGraph(multi_dict, multigraph_input=True)
+
+    async def get_paths(self, report: 'VulnerabilityReport', initial_host: str, target_host: str):  # -> list[list[tuple[str, str, str]]]:
+        g = await self.build_graph(report=report)
+        paths = nx.all_simple_edge_paths(g, initial_host, target_host)
+        print(f'PATHS: {paths}')
+        return paths
+
+    async def generate_adversary_v2(self, path, tags = []):
+        async def create_cve_adversary(techniques, tags):
+            adv_id = uuid.uuid4()
+            obj_default = (
+                await self.data_svc.locate('objectives', match=dict(name='default'))
+            )[0]
+            return dict(
+                id=str(adv_id),
+                name='pathfinder adversary',
+                description='auto generated adversary for pathfinder',
+                atomic_ordering=techniques,
+                tags=tags,
+                objective=obj_default.id,
+            )
+
+        techniques = []
+        for edge in path:
+            adversary_uuid = edge[2]
+            abilities = await self._get_adversary_abilities(uuid=adversary_uuid)
+            adv_tags = await self._get_adversary_tags(uuid=adversary_uuid)
+            techniques.extend(abilities)
+            tags.extend(adv_tags)
+        print(f'CREATING ADVERSARY WITH ABILITIES {techniques} AND TAGS {tags}')
+        adv = await create_cve_adversary(techniques=techniques, tags=tags)
+        print(f'CREATED ADVERSARY {adv}')
+        await self.save_adversary(adv)
+        return path, adv['id']
+
+    async def _get_adversary_abilities(self, uuid: str) -> int:
+        adv = [a.display for a in self.data_svc.locate('adversaries', match=dict(id=uuid))]
+        print(f'ADV FOUND: {adv}')
+        print(f'ADV ORDERING: {adv[0]["atomic_ordering"]}')
+        if not adv:
+            return []
+        return adv[0]['atomic_ordering']
+
+    async def _get_adversary_tags(self, uuid: str) -> int:
+        adv = [a.display for a in self.data_svc.locate('adversaries', match=dict(id=uuid))]
+        print(f'ADV FOUND: {adv}')
+        print(f'ADV ORDERING: {adv[0]["tags"]}')
+        if not adv:
+            return []
+        return adv[0]['tags']
+
     def _has_executor(self, ability: 'CoreAbility', executor: str) -> bool:
         """Determine if the Ability object has a platform matching executor.
 

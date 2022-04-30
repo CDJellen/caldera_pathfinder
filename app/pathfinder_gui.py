@@ -123,6 +123,8 @@ class PathfinderGUI(BaseWorld):
                     host_info=lambda d: self.retrieve_hosts_from_report(d),
                     update_host=lambda d: self.update_host_in_report(d),
                     paths=lambda d: self.get_paths(d),
+                    paths_v2=lambda d: self.get_paths_v2(d),
+                    create_adversary_v2=lambda d: self.generate_adversary_v2(d),
                 ),
                 PATCH=dict(report=lambda d: self.rename_report(d)),
             )
@@ -334,6 +336,45 @@ class PathfinderGUI(BaseWorld):
         }
         response['paths'].append(test_path)
         return response
+
+    async def get_paths_v2(self, data: dict) -> dict:
+        source_ip = data.get('source')
+        target_ip = data.get('target')
+        report_id = data.get('id')
+        response = dict(status='fail', paths=[])
+
+        report = await self.data_svc.locate(
+                'vulnerabilityreports', match=dict(id=report_id)
+            )
+        if report:
+            report = report[0]
+            response['status'] = 'success'
+        else:
+            return response
+        paths = await self.pathfinder_svc.get_paths(report=report, initial_host=source_ip, target_host=target_ip)
+        response['paths'] = paths
+        return response
+
+    async def generate_adversary_v2(self, data: dict) -> dict:
+        def generate_links(path):
+            if path:
+                return [
+                    dict(source=path[n][0], target=path[n][1], type='path')
+                    for n in range(len(path) - 1)
+                ]
+            return []
+
+        path = data.pop('path')
+        report_id = data.pop('id')
+        report = await self.data_svc.locate(
+            'vulnerabilityreports', match=dict(id=report_id)
+        )
+        tags = data.pop('adversary_tags')
+        if report and path:
+            path, adv_id = await self.pathfinder_svc.generate_adversary_v2(
+                path=path, tags=tags
+            )
+            return dict(adversary_id=adv_id, new_links=generate_links(path))
 
     async def check_scan_status(self):
         pending = [s.id for s in self.running_scans.values() if s.status != 'done']

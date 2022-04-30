@@ -31,8 +31,18 @@ class ReportParser(ParserInterface):
                     network_map.add_edge(host1.ip, host2.ip)
         report.network_map = network_map
 
+    def generate_network_map_v2(self, report):
+        if report.network_map_nodes and report.network_map_edges:
+            return
+        for host1 in report.hosts.keys():
+            report.network_map_nodes.append(host1)
+            for host2 in report.hosts.keys():
+                if host2 != host1:
+                    report.network_map_edges.append((host1, host2))
+
     def parse_caldera_report(self, root, name):
         root['name'] = name
         report = VulnerabilityReport.load(root)
         self.generate_network_map(report=report)
+        self.generate_network_map_v2(report=report)
         return report
