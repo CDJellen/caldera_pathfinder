@@ -449,7 +449,7 @@ class PathfinderGUI(BaseWorld):
             if path:
                 return [
                     dict(source=path[n][0], target=path[n][1], type='path')
-                    for n in range(len(path) - 1)
+                    for n in range(len(path))
                 ]
             return []
         print(f'CREATE ADVERASRY REQUEST DATA: {data}')

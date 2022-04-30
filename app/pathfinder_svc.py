@@ -391,7 +391,7 @@ class PathfinderService:
             techniques.extend(abilities)
             tags.extend(adv_tags)
         print(f'CREATING ADVERSARY WITH ABILITIES {techniques} AND TAGS {tags}')
-        adv = await create_cve_adversary(techniques=techniques, tags=tags)
+        adv = await create_cve_adversary(techniques=techniques, tags=set([t for t in tags if t != '']))
         print(f'CREATED ADVERSARY {adv}')
         await self.save_adversary(adv)
         return path, adv['id']
