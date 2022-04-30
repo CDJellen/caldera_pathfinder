@@ -337,23 +337,34 @@ class PathfinderService:
         multi_dict = dict()
         for node in report.network_map_nodes:
             host = report.hosts[node]
+            multi_dict[node] = dict()
             for edge in [e for e in report.network_map_edges if e[0] == node]:
                 edge_data = dict()
                 for ability in host.possible_abilities:
-                    steps = await self._get_adversary_steps(ability.uuid)
+                    steps = await self._get_adversary_abilities(ability.uuid)
                     edge_data[ability.uuid] = {
                         'weight': ability.success_prob,
                         'steps': len(steps)
                     }
                 multi_dict[node][edge[1]] = edge_data
-        print(f'MULTI DICT: {multi_dict}')
+
         return nx.MultiDiGraph(multi_dict, multigraph_input=True)
 
     async def get_paths(self, report: 'VulnerabilityReport', initial_host: str, target_host: str):  # -> list[list[tuple[str, str, str]]]:
         g = await self.build_graph(report=report)
-        paths = nx.all_simple_edge_paths(g, initial_host, target_host)
-        print(f'PATHS: {paths}')
-        return paths
+        path_data = dict()
+        paths = [p for p in nx.all_simple_edge_paths(g, initial_host, target_host)]
+
+        sorted_paths = [[] for _ in paths]
+        for i, path in enumerate(paths):
+            for edge in path:
+                src = edge[0]
+                tgt = edge[1]
+                weights = g.get_edge_data(src, tgt)[edge[2]]
+                sorted_paths[i].append((src, tgt, weights['weight'], weights['steps']))
+        path_data['paths'] = paths
+        path_data['sorted_paths'] = sorted_paths
+        return path_data
 
     async def generate_adversary_v2(self, path, tags = []):
         async def create_cve_adversary(techniques, tags):
@@ -372,6 +383,7 @@ class PathfinderService:
 
         techniques = []
         for edge in path:
+            print(f'EDGE: {edge}')
             adversary_uuid = edge[2]
             abilities = await self._get_adversary_abilities(uuid=adversary_uuid)
             adv_tags = await self._get_adversary_tags(uuid=adversary_uuid)
@@ -384,7 +396,7 @@ class PathfinderService:
         return path, adv['id']
 
     async def _get_adversary_abilities(self, uuid: str) -> int:
-        adv = [a.display for a in self.data_svc.locate('adversaries', match=dict(id=uuid))]
+        adv = [a.display for a in await self.data_svc.locate('adversaries', match=dict(adversary_id=uuid))]
         print(f'ADV FOUND: {adv}')
         print(f'ADV ORDERING: {adv[0]["atomic_ordering"]}')
         if not adv:
@@ -392,7 +404,7 @@ class PathfinderService:
         return adv[0]['atomic_ordering']
 
     async def _get_adversary_tags(self, uuid: str) -> int:
-        adv = [a.display for a in self.data_svc.locate('adversaries', match=dict(id=uuid))]
+        adv = [a.display for a in await self.data_svc.locate('adversaries', match=dict(adversary_id=uuid))]
         print(f'ADV FOUND: {adv}')
         print(f'ADV ORDERING: {adv[0]["tags"]}')
         if not adv:

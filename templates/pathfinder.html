@@ -52,7 +52,14 @@
         Target: <span x-text="selectedTarget"></span>
     </div>
     <div>
-        <button class="button is-small is-primary" x-text="'Test get paths'" @click="getPaths();"></button>
+        <button class="button is-small is-primary" x-text="'Test get paths'" @click="getPathsV2();"></button>
+    </div>
+    <br>
+    <div>
+        <button class="button is-small is-primary" x-text="'Test create adv: success'" @click="createAdversaryV2(path_success);"></button>
+        <button class="button is-small is-primary" x-text="'Test create adv: stealth'" @click="createAdversaryV2(path_stealth);"></button>
+        <button class="button is-small is-primary" x-text="'Test create adv: persistance'" @click="createAdversaryV2(path_persistance);"></button>
+        <button class="button is-small is-primary" x-text="'Test create adv: speed'" @click="createAdversaryV2(path_speed);"></button>
     </div>
     <hr>
     <div id="pathfinder-section" class="section-profile">
@@ -414,6 +421,11 @@ function alpinePathfinder() {
         selectedTarget: '',
         selectedReport: '',
         paths: [],
+        path_success: [],
+        path_stealth: [],
+        path_persistance: [],
+        path_speed: [],
+        selected_path: [],
 
         showHostModal: false,
         isEditing: false,
@@ -457,10 +469,48 @@ function alpinePathfinder() {
 
         getPaths() {
             current_report = $('#vulnerabilityReport').val();
-            apiV2('POST', '/plugin/pathfinder/api', {'index':'paths', 'id':current_report, 'source': this.selectedSource, 'target': this.selectedTarget}).then((response) => {
+            apiV2('POST', '/plugin/pathfinder/api', {'index':'paths', 'id': current_report, 'source': this.selectedSource, 'target': this.selectedTarget}).then((response) => {
                 toast('Returned possible attack paths.', true);
                 this.paths = response.paths;
                 console.log(this.paths);
+            }).catch((error) => {
+                toast('Error obtaining attack paths.', false);
+                console.error(error);
+            })
+        },
+
+        getPathsV2() {
+            current_report = $('#vulnerabilityReport').val();
+            apiV2('POST', '/plugin/pathfinder/api', {'index':'paths_v2', 'id': current_report, 'source': this.selectedSource, 'target': this.selectedTarget}).then((response) => {
+                toast('Returned possible attack paths.', true);
+                console.log(response);
+                this.paths = response.paths;
+                this.path_success = response.path_success;
+                this.path_stealth = response.path_stealth;
+                this.path_persistance = response.path_persistance;
+                this.path_speed = response.path_speed;
+                console.log(this.paths);
+                console.log(this.path_success);
+                console.log(this.path_stealth);
+                console.log(this.path_persistance);
+                console.log(this.path_speed);
+            }).catch((error) => {
+                toast('Error obtaining attack paths.', false);
+                console.error(error);
+            })
+        },
+
+        createAdversaryV2(path) {
+            current_report = $('#vulnerabilityReport').val();
+            tags = $('#adversaryTags').val();
+            console.log(this.selected_path);
+            apiV2('POST', '/plugin/pathfinder/api', {'index':'create_adversary_v2', 'id': current_report, 'path': path, 'adversary_tags': tags}).then((response) => {
+                removeOldPaths();
+                addNewLinks(response.new_links);
+                created_adversary = response.adversary_id;
+                validateFormState(true, '#viewAdversaries');
+                validateFormState(true, '#setupOperation');
+                toast('Custom Pathfinder adversary created.', true);
             }).catch((error) => {
                 toast('Error obtaining attack paths.', false);
                 console.error(error);

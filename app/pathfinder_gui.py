@@ -1,4 +1,5 @@
 import os
+import copy
 import glob
 import yaml
 import logging
@@ -341,7 +342,7 @@ class PathfinderGUI(BaseWorld):
         source_ip = data.get('source')
         target_ip = data.get('target')
         report_id = data.get('id')
-        response = dict(status='fail', paths=[])
+        response = dict(status='fail', paths=[], path_success=[], path_stealth=[], path_persistance=[], path_speed=[])
 
         report = await self.data_svc.locate(
                 'vulnerabilityreports', match=dict(id=report_id)
@@ -351,8 +352,33 @@ class PathfinderGUI(BaseWorld):
             response['status'] = 'success'
         else:
             return response
-        paths = await self.pathfinder_svc.get_paths(report=report, initial_host=source_ip, target_host=target_ip)
+        path_data = await self.pathfinder_svc.get_paths(report=report, initial_host=source_ip, target_host=target_ip)
+        paths = path_data.pop('paths')
+        sorted_paths = path_data.pop('sorted_paths')
+
+        # highest success prob
+        sorted_paths.sort(key=lambda x: sum(float(v[2]) for v in x))
+        path_success = copy.deepcopy(sorted_paths)[0]
+        print(f'PATH SUCCESS {path_success}')
+        # fewest abilities
+        sorted_paths.sort(key=lambda x: sum(int(v[3]) for v in x))
+        path_stealth = copy.deepcopy(sorted_paths)[0]
+        print(f'PATH STELATH {path_stealth}')
+        # most hosts
+        sorted_paths.sort(key=lambda x: len(x)*(-1))
+        path_persistance = copy.deepcopy(sorted_paths)[0]
+        print(f'PATH PERSISSTANCE {path_persistance}')
+        # fewest edges
+        sorted_paths.sort(key=lambda x: len(x))
+        path_speed = copy.deepcopy(sorted_paths)[0]
+        print(f'PATH SPEED {path_speed}')
+
         response['paths'] = paths
+        response['path_success'] = path_success
+        response['path_stealth'] = path_stealth
+        response['path_persistance'] = path_persistance
+        response['path_speed'] = path_speed
+        print(f'RESPONSE: {response}')
         return response
 
     async def generate_adversary_v2(self, data: dict) -> dict:
@@ -363,17 +389,15 @@ class PathfinderGUI(BaseWorld):
                     for n in range(len(path) - 1)
                 ]
             return []
-
+        print(f'CREATE ADVERASRY REQUEST DATA: {data}')
         path = data.pop('path')
         report_id = data.pop('id')
-        report = await self.data_svc.locate(
-            'vulnerabilityreports', match=dict(id=report_id)
-        )
         tags = data.pop('adversary_tags')
-        if report and path:
+        if path:
             path, adv_id = await self.pathfinder_svc.generate_adversary_v2(
                 path=path, tags=tags
             )
+            print(f'GEN LINKS: {generate_links(path)}')
             return dict(adversary_id=adv_id, new_links=generate_links(path))
 
     async def check_scan_status(self):
