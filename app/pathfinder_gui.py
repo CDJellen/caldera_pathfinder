@@ -97,11 +97,11 @@ class PathfinderGUI(BaseWorld):
                     visualization_data['links'].append(
                         dict(source=id, target=id2, type='cve')
                     )
-        for link in vr[0].network_map:
-            for to_node in vr[0].network_map[link]:
-                visualization_data['links'].append(
-                    dict(source=link, target=to_node, type='network')
-                )
+
+        for edge in vr[0].network_map_edges:
+            visualization_data['links'].append(
+                dict(source=edge[0], target=edge[1], type='network')
+            )
 
         return visualization_data
 
@@ -126,6 +126,8 @@ class PathfinderGUI(BaseWorld):
                     paths=lambda d: self.get_paths(d),
                     paths_v2=lambda d: self.get_paths_v2(d),
                     create_adversary_v2=lambda d: self.generate_adversary_v2(d),
+                    edge_info=lambda d: self.retrieve_edges_from_report(d),
+                    update_edges=lambda d: self.update_report_edges(d),
                 ),
                 PATCH=dict(report=lambda d: self.rename_report(d)),
             )
@@ -244,6 +246,67 @@ class PathfinderGUI(BaseWorld):
             host_info['freebie_abilities'] = host.freebie_abilities
             host_info['denied_abilities'] = host.denied_abilities
             response['hosts'].append(host_info)
+        return response
+
+    async def retrieve_edges_from_report(self, data: dict) -> dict:
+        """Use id provided by the request, return info on edges in the report.
+
+        Args:
+            data: The HTTP request data, assumed to contain an `id` which maps
+                  to a vulnerability report in the data service.
+
+        Returns:
+            The response status (`'success'` or `'fail'`) as well as a list of
+            edges describing the network graph of the matching vulnerability
+            report.
+        """
+        report_id = data.get('report_id')
+        response = dict(status='fail', hosts=[])
+        report = await self.data_svc.locate('vulnerabilityreports',
+                                            match=dict(id=report_id))
+        if report:
+            report = report[0]
+            response['status'] = 'success'
+        else:
+            return response
+        response['edges'] = report.network_map_edges
+        return response
+
+    async def update_report_edges(self, data: dict) -> dict:
+        """Update a host using the content of the HTTP request body.
+
+        Args:
+            data: The HTTP request data, assumed to contain a `host` which has
+                  a `report_id` that maps to a vulnerability report in the data
+                  service, as well as new entries for the host's name, freebie
+                  abilities, possible abilities, or denied abilities.  The host
+                  is indexed in its vulnerability report by its ip address.
+
+        Returns:
+            The status generated in handling the response, `'fail'` if the
+            specified vulnerability report is not found in the data service and
+            `'success'` if it is found and the host successfully updated.
+        """
+        new_edges = data.get('edge_data')
+        report_id = data.get('report_id')
+        response = dict(status='fail')
+
+        report = await self.data_svc.locate(
+                'vulnerabilityreports', match=dict(id=report_id)
+            )
+        if report:
+            report = report[0]
+            response['status'] = 'success'
+        else:
+            return response
+        print(f'NEW EDGES: {new_edges}')
+        network_map_edges = []
+        for edge in new_edges:
+            network_map_edges.append((edge[0], edge[1]))
+        report.network_map_edges = network_map_edges
+        await self.data_svc.remove('vulnerabilityreports',
+                                   match=dict(id=report_id))
+        await self.data_svc.store(report)
         return response
 
     async def update_host_in_report(self, data: dict) -> dict:
