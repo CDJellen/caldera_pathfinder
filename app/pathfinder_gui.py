@@ -357,11 +357,11 @@ class PathfinderGUI(BaseWorld):
         sorted_paths = path_data.pop('sorted_paths')
 
         # highest success prob
-        sorted_paths.sort(key=lambda x: sum(float(v[2]) for v in x))
+        sorted_paths.sort(key=lambda x: sum(float(v[3]) for v in x))
         path_success = copy.deepcopy(sorted_paths)[0]
         print(f'PATH SUCCESS {path_success}')
         # fewest abilities
-        sorted_paths.sort(key=lambda x: sum(int(v[3]) for v in x))
+        sorted_paths.sort(key=lambda x: sum(int(v[4]) for v in x))
         path_stealth = copy.deepcopy(sorted_paths)[0]
         print(f'PATH STELATH {path_stealth}')
         # most hosts
@@ -391,8 +391,10 @@ class PathfinderGUI(BaseWorld):
             return []
         print(f'CREATE ADVERASRY REQUEST DATA: {data}')
         path = data.pop('path')
-        report_id = data.pop('id')
         tags = data.pop('adversary_tags')
+        print(f'TYPE TAGS: {type(tags)}')
+        if isinstance(tags, str):
+            tags = [tags]
         if path:
             path, adv_id = await self.pathfinder_svc.generate_adversary_v2(
                 path=path, tags=tags

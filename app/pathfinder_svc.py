@@ -360,8 +360,9 @@ class PathfinderService:
             for edge in path:
                 src = edge[0]
                 tgt = edge[1]
-                weights = g.get_edge_data(src, tgt)[edge[2]]
-                sorted_paths[i].append((src, tgt, weights['weight'], weights['steps']))
+                adv = edge[2]
+                weights = g.get_edge_data(src, tgt)[adv]
+                sorted_paths[i].append((src, tgt, adv, weights['weight'], weights['steps']))
         path_data['paths'] = paths
         path_data['sorted_paths'] = sorted_paths
         return path_data
@@ -406,7 +407,7 @@ class PathfinderService:
     async def _get_adversary_tags(self, uuid: str) -> int:
         adv = [a.display for a in await self.data_svc.locate('adversaries', match=dict(adversary_id=uuid))]
         print(f'ADV FOUND: {adv}')
-        print(f'ADV ORDERING: {adv[0]["tags"]}')
+        print(f'ADV TAGS: {adv[0]["tags"]}')
         if not adv:
             return []
         return adv[0]['tags']
