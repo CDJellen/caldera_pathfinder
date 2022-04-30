@@ -367,7 +367,7 @@ class PathfinderService:
         path_data['sorted_paths'] = sorted_paths
         return path_data
 
-    async def generate_adversary_v2(self, path, tags = []):
+    async def generate_adversary_v2(self, path, tags=[]):
         async def create_cve_adversary(techniques, tags):
             adv_id = uuid.uuid4()
             obj_default = (
@@ -387,11 +387,9 @@ class PathfinderService:
             print(f'EDGE: {edge}')
             adversary_uuid = edge[2]
             abilities = await self._get_adversary_abilities(uuid=adversary_uuid)
-            adv_tags = await self._get_adversary_tags(uuid=adversary_uuid)
             techniques.extend(abilities)
-            tags.extend(adv_tags)
         print(f'CREATING ADVERSARY WITH ABILITIES {techniques} AND TAGS {tags}')
-        adv = await create_cve_adversary(techniques=techniques, tags=set([t for t in tags if t != '']))
+        adv = await create_cve_adversary(techniques=techniques, tags=[])
         print(f'CREATED ADVERSARY {adv}')
         await self.save_adversary(adv)
         return path, adv['id']

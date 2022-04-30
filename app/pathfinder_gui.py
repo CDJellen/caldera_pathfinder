@@ -457,7 +457,7 @@ class PathfinderGUI(BaseWorld):
         tags = data.pop('adversary_tags')
         print(f'TYPE TAGS: {type(tags)}')
         if isinstance(tags, str):
-            tags = [tags]
+            tags = [t.strip(' ') for t in tags.split(',')]
         if path:
             path, adv_id = await self.pathfinder_svc.generate_adversary_v2(
                 path=path, tags=tags

@@ -9,6 +9,7 @@ import networkx as nx
 
 from plugins.pathfinder.app.objects.c_report import VulnerabilityReport
 from plugins.pathfinder.app.objects.secondclass.c_host import Host
+from plugins.pathfinder.app.objects.secondclass.c_os import OS
 from plugins.pathfinder.app.objects.secondclass.c_port import Port
 from plugins.pathfinder.app.interfaces.i_parser import ParserInterface
 
@@ -24,6 +25,7 @@ class ReportParser(ParserInterface):
             root = xml_report.getroot()
             caldera_report = self.parse_xml_report(root, name)
             self.generate_network_map(caldera_report)
+            self.generate_network_map_v2(caldera_report)
         except Exception as e:
             self.log.error('exception when parsing nmap results xml: %s' % repr(e))
             return None
@@ -37,12 +39,17 @@ class ReportParser(ParserInterface):
         for host in root.findall('host'):
             host_exists = False
             cves = []
-            report_host = Host(host.find('address').get('addr'))  # TODO mac
+            report_host = Host(host.find('address').get('addr'))
             if host.find('hostnames') is not None:
                 if host.find('hostnames').find('hostname') is not None:
                     report_host.hostname = (
                         host.find('hostnames').find('hostname').get('name')
                     )
+                try:
+                    os_family = host.find('os').find('osmatch').find('osclass').get('osfamily').lower()
+                except AttributeError:
+                    os_family = 'other'
+                report_host.os = OS(os_family)
             for port in host.find('ports').findall('port'):
                 report_port = Port(port.get('portid'))
                 report_port.protocol = port.get('protocol', '')
@@ -80,6 +87,15 @@ class ReportParser(ParserInterface):
                 if host2 != host_object:
                     network_map.add_edge(host_object.ip, host2.ip)
         report.network_map = network_map
+
+    def generate_network_map_v2(self, report):
+        if report.network_map_nodes and report.network_map_edges:
+            return
+        for host1 in report.hosts.keys():
+            report.network_map_nodes.append(host1)
+            for host2 in report.hosts.keys():
+                if host2 != host1:
+                    report.network_map_edges.append((host1, host2))
 
 
 if __name__ == '__main__':
