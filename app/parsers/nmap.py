@@ -5,8 +5,6 @@ import logging
 import argparse
 import xml.etree.ElementTree as ET
 
-import networkx as nx
-
 from plugins.pathfinder.app.objects.c_report import VulnerabilityReport
 from plugins.pathfinder.app.objects.secondclass.c_host import Host
 from plugins.pathfinder.app.objects.secondclass.c_os import OS
@@ -25,7 +23,6 @@ class ReportParser(ParserInterface):
             root = xml_report.getroot()
             caldera_report = self.parse_xml_report(root, name)
             self.generate_network_map(caldera_report)
-            self.generate_network_map_v2(caldera_report)
         except Exception as e:
             self.log.error('exception when parsing nmap results xml: %s' % repr(e))
             return None
@@ -78,17 +75,6 @@ class ReportParser(ParserInterface):
         return report
 
     def generate_network_map(self, report):
-        if report.network_map_nodes and report.network_map_edges:
-            return
-        network_map = nx.Graph()
-        for host_object in report.hosts.values():
-            network_map.add_node(host_object.ip)
-            for host2 in report.hosts.values():
-                if host2 != host_object:
-                    network_map.add_edge(host_object.ip, host2.ip)
-        report.network_map = network_map
-
-    def generate_network_map_v2(self, report):
         if report.network_map_nodes and report.network_map_edges:
             return
         for host1 in report.hosts.keys():

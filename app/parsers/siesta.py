@@ -1,8 +1,6 @@
 import json
 import logging
 
-import networkx as nx
-
 from plugins.pathfinder.app.objects.c_report import VulnerabilityReport
 from plugins.pathfinder.app.objects.secondclass.c_host import Host
 from plugins.pathfinder.app.objects.secondclass.c_port import Port
@@ -55,11 +53,10 @@ class ReportParser(ParserInterface):
         return report
 
     def generate_network_map(self, report):
-        network_map = nx.Graph()
-        for host in report.hosts.values():
-            network_map.add_node(host.hostname)
-            for h2 in report.hosts.values():
-                if h2 != host:
-                    network_map.add_edge(host.hostname, h2.hostname) 
-
-        report.network_map = network_map
+        if report.network_map_nodes and report.network_map_edges:
+            return
+        for host1 in report.hosts.keys():
+            report.network_map_nodes.append(host1)
+            for host2 in report.hosts.keys():
+                if host2 != host1:
+                    report.network_map_edges.append((host1, host2))

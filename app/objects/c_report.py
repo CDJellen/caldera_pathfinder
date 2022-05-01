@@ -2,7 +2,6 @@ import uuid
 from datetime import date
 
 import marshmallow as ma
-import networkx as nx
 
 from app.utility.base_object import BaseObject
 from app.objects.interfaces.i_object import FirstClassObjectInterface
@@ -44,11 +43,8 @@ class VulnerabilityReport(FirstClassObjectInterface, BaseObject):
         )
         self.hosts = hosts or dict()
         self.scope = scope
-        self.network_map = nx.Graph()
         self.network_map_nodes = network_map_nodes or []
         self.network_map_edges = network_map_edges or []
-        self.network_map.add_nodes_from(self.network_map_nodes)
-        self.network_map.add_edges_from(self.network_map_edges)
 
     def store(self, ram):
         existing = self.retrieve(ram['vulnerabilityreports'], self.unique)
@@ -57,5 +53,4 @@ class VulnerabilityReport(FirstClassObjectInterface, BaseObject):
             return self.retrieve(ram['vulnerabilityreports'], self.unique)
         existing.update('name', self.name)
         existing.update('hosts', self.hosts)
-        existing.update('network_map', self.network_map)
         return existing
