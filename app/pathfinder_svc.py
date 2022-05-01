@@ -159,7 +159,7 @@ class PathfinderService:
         else:
             return get_host_exploits(targetedhost)
 
-    async def collect_tagged_abilities(self, ability_tags: list[str]) -> list:
+    async def collect_tagged_abilities(self, ability_tags: list) -> list:
         """Gather abilities matching one or more of the provided ability tags.
 
         Args:
@@ -177,8 +177,7 @@ class PathfinderService:
             for a in await self.data_svc.search(tag, 'abilities') or []
         ]
 
-    async def collect_tagged_adversaries(self, adversary_tags: list[str]
-                                         ) -> list:
+    async def collect_tagged_adversaries(self, adversary_tags: list) -> list:
         """Gather adversaries matching one or more of the provided ability tags.
 
         Args:
