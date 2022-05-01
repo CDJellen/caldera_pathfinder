@@ -340,7 +340,7 @@ class PathfinderGUI(BaseWorld):
         for host_id in report.hosts.keys():
             if host_id == patch_data.get('ip'):
                 host = report.hosts[host_id]
-                host.name = patch_data.get('name') or host.name
+                host.name = patch_data.get('name')
                 host.freebie_abilities = patch_data.get('freebie_abilities')
                 host.denied_abilities = patch_data.get('denied_abilities')
                 new_possible_abilities = zip(

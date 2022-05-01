@@ -13,7 +13,7 @@
         <table id="hosts" class="table is-striped is-fullwidth">
             <thead>
                 <tr>
-                    <th>Host IP</th>
+                    <th>Host Name</th>
                     <th>Modify Host</th>
                     <th>Possible Abilities</th>
                     <th>Freebie Abilities</th>
@@ -22,9 +22,9 @@
             <tbody>
                 <template x-for="(host, index) of hostObjects" :key="index">
                     <tr>
-                        <td x-text="host.ip"><td>
+                        <td x-text="host.name"><td>
                         <td>
-                            <button class="button is-small is-primary" x-text="host.name" @click="selectedHost=host; selectHost();"></button>
+                            <button class="button is-small is-primary" x-text="host.ip" @click="selectedHost=host; selectHost();"></button>
                         </td>
                         <td x-text="host.possible_abilities"></td>
                         <td x-text="host.freebie_abilities"></td>
