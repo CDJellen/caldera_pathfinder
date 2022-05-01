@@ -118,18 +118,20 @@ class PathfinderGUI(BaseWorld):
                     import_scan=lambda d: self.import_report(d),
                     reports=lambda d: self.retrieve_reports(),
                     status=lambda d: self.check_scan_status(),
-                    create_adversary=lambda d: self.generate_adversary(d),
+                    create_adversary=lambda d: self.generate_adversary(d),  # depreciated
                     scanner_config=lambda d: self.return_scanner_configuration(d),
                     source_name=lambda d: self.get_source_name(d),
                     host_info=lambda d: self.retrieve_hosts_from_report(d),
-                    update_host=lambda d: self.update_host_in_report(d),
-                    paths=lambda d: self.get_paths(d),
+                    paths=lambda d: self.get_paths(d),  # depreciated
                     paths_v2=lambda d: self.get_paths_v2(d),
                     create_adversary_v2=lambda d: self.generate_adversary_v2(d),
                     edge_info=lambda d: self.retrieve_edges_from_report(d),
-                    update_edges=lambda d: self.update_report_edges(d),
                 ),
-                PATCH=dict(report=lambda d: self.rename_report(d)),
+                PATCH=dict(
+                    report=lambda d: self.rename_report(d),
+                    update_edges=lambda d: self.update_report_edges(d),
+                    update_host=lambda d: self.update_host_in_report(d),
+                    ),
             )
             if index not in options[request.method]:
                 return web.HTTPBadRequest(

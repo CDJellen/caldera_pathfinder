@@ -540,7 +540,7 @@ function alpinePathfinder() {
 
         saveEdges(edgeData) {
             current_report = $('#vulnerabilityReport').val();
-            apiV2('POST', '/plugin/pathfinder/api', {'index':'update_edges', 'report_id': current_report, 'edge_data': edgeData}).then((response) => {
+            apiV2('PATCH', '/plugin/pathfinder/api', {'index':'update_edges', 'report_id': current_report, 'edge_data': edgeData}).then((response) => {
                 console.log(response.status);
             }).catch((error) => {
                 toast('Error loading graph edges', false);
@@ -616,7 +616,7 @@ function alpinePathfinder() {
 
         saveHost(host) {
             console.log(host);
-            apiV2('POST', '/plugin/pathfinder/api', {'index':'update_host', 'host': host}).then((response) => {
+            apiV2('PATCH', '/plugin/pathfinder/api', {'index':'update_host', 'host': host}).then((response) => {
                 toast('Updated host object in report.', true);
             }).catch((error) => {
                 toast('Error updating report.', false);
