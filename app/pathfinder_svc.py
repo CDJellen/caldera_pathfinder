@@ -14,9 +14,7 @@ from app.objects.secondclass.c_fact import Fact
 from app.objects.secondclass.c_relationship import Relationship
 from plugins.pathfinder.app.objects.c_report import VulnerabilityReport
 from plugins.pathfinder.app.objects.secondclass.c_host import Ability
-from plugins.pathfinder.app.objects.c_cve import CVE
 import plugins.pathfinder.settings as settings
-import plugins.pathfinder.app.enrichment.cve as cve
 
 
 DEFAULT_SUCCESS_PROB = 0.8
