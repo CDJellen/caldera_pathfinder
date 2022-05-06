@@ -347,7 +347,7 @@ class PathfinderGUI(BaseWorld):
                 host.denied_abilities = patch_data.get('denied_abilities')
                 new_possible_abilities = zip(
                     patch_data.get('possible_abilities'),
-                    patch_data.get('possible_abilities_success_prob')
+                    [float(s) for s in patch_data.get('possible_abilities_success_prob')]
                 )
 
                 new_abilities = []
